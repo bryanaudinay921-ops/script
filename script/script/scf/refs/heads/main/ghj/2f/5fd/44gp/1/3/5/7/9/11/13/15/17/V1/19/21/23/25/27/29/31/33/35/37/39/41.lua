@@ -1,3 +1,4 @@
+-------------------------------------------------------------------------------------------------------------------------------------
 local coreGui = game:GetService("CoreGui")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -123,8 +124,7 @@ function Candy()
         if not v3 then
           for key4, value4 in pairs(workspace.CollectibleSpawner:GetChildren()) do
             if value4.Name == "Spookfest2026Pumpkin" then
-              -- Correction ici : suppression de l'argument "WorldPivot"
-              game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = value4:GetPivot()
+              game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = value4:GetPivot("WorldPivot")
                 * CFrame.new(0, 5, 0)
 
               v3 = true
@@ -159,8 +159,7 @@ function Candy()
                 v3 = true
                 break
               elseif value6.Name == "Spookfest2026Pumpkin" then
-                -- Correction ici également : suppression de l'argument "WorldPivot"
-                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = value6:GetPivot()
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = value6:GetPivot("WorldPivot")
                 v3 = true
                 break
               end

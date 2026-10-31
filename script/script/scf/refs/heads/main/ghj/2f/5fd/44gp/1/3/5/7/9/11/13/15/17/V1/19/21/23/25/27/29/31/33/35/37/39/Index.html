@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier de réparation de code</title>
+
+<!-- Polices (facultatif : la page fonctionne aussi sans, grâce aux polices de secours) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ==========================================================
+   1. COULEURS ET VARIABLES  → modifie ici pour changer le thème
+   ========================================================== */
+:root {
+  --bg:        #0c1020;   /* fond de page */
+  --panel:     #141a2e;   /* fond des compartiments */
+  --panel-2:   #1a2240;   /* barres d’en-tête des compartiments */
+  --line:      #28325a;   /* bordures */
+  --text:      #e7ecfa;   /* texte principal */
+  --muted:     #8f9bc4;   /* texte secondaire */
+  --accent:    #8b9cff;   /* couleur principale */
+  --accent-2:  #5b6cf0;   /* accent foncé (boutons) */
+  --ok:        #4fd6a0;   /* succès */
+  --warn:      #ffb454;   /* avertissement */
+  --radius:    14px;
+  --font-ui:   "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+/* ==========================================================
+   2. BASE
+   ========================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-ui);
+  color: var(--text);
+  background:
+    radial-gradient(900px 500px at 85% -10%, rgba(91,108,240,.18), transparent 60%),
+    var(--bg);
+  line-height: 1.5;
+}
+button, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ==========================================================
+   3. ANIMATION DE BIENVENUE (fondu + glissement vers le haut)
+   Chaque bloc a un délai différent via --d
+   ========================================================== */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.reveal {
+  opacity: 0;
+  animation: rise .8s cubic-bezier(.2,.7,.2,1) forwards;
+  animation-delay: var(--d, 0s);
+}
+
+/* ==========================================================
+   4. EN-TÊTE + LOGO
+   ========================================================== */
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 24px 8px;
+}
+/* Emplacement du logo : remplace src="[VOTRE_URL_DE_LOGO]" dans le HTML */
+.logo-slot {
+  flex: none;
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  display: grid; place-items: center;
+  overflow: hidden;
+}
+.logo-slot img { width: 100%; height: 100%; object-fit: contain; }
+/* Si l’image est introuvable, on affiche un repère visible à la place */
+.logo-slot.empty { border-style: dashed; color: var(--muted); font-size: .72rem; }
+.logo-slot.empty img { display: none; }
+.logo-slot.empty::after { content: "Logo"; }
+.logo-slot.mini { width: 32px; height: 32px; border-radius: 8px; font-size: .6rem; }
+
+header h1 { margin: 0; font-size: clamp(1.4rem, 2.6vw, 2rem); font-weight: 700; letter-spacing: -.02em; }
+header p  { margin: 2px 0 0; color: var(--muted); font-size: .95rem; }
+
+/* ==========================================================
+   5. ZONE PRINCIPALE : deux compartiments
+   ========================================================== */
+main {
+  flex: 1;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px 24px 32px;
+}
+
+/* Barre d’options */
+.options {
+  display: flex; flex-wrap: wrap; gap: 8px 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  align-items: center;
+}
+.options .title { font-weight: 600; margin-right: 6px; }
+.chip { position: relative; }
+.chip input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.chip span {
+  display: inline-block;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: .88rem;
+  transition: all .2s;
+}
+.chip input:checked + span { color: var(--text); background: rgba(139,156,255,.16); border-color: var(--accent); }
+.chip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.options select {
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px 10px; font-size: .88rem;
+}
+
+/* Grille des compartiments : 2 colonnes sur grand écran, 1 sur mobile */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+.card {
+  display: flex; flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  min-width: 0;
+}
+.card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 14px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line);
+}
+.card-head h2 { margin: 0; font-size: 1rem; font-weight: 600; }
+.dots { display: flex; gap: 6px; margin-right: 10px; }
+.dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: block; }
+.head-left { display: flex; align-items: center; }
+
+textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 380px;
+  resize: vertical;
+  padding: 16px;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-code);
+  font-size: .88rem;
+  line-height: 1.6;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+}
+textarea::placeholder { color: #5d6896; }
+textarea:focus { outline: none; background: rgba(139,156,255,.04); }
+
+.card-foot {
+  display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 8px 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .8rem;
+  font-family: var(--font-code);
+}
+
+/* ==========================================================
+   6. BOUTONS
+   ========================================================== */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  cursor: pointer;
+  font-weight: 500;
+  transition: transform .15s, background .2s, border-color .2s;
+}
+.btn:hover { border-color: var(--accent); }
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
+.btn.primary:hover { background: #6e7ef5; }
+.btn.small { padding: 5px 12px; font-size: .85rem; }
+/* Effet « Copié ! » */
+.btn.copied { background: rgba(79,214,160,.15); border-color: var(--ok); color: var(--ok); }
+.btn.danger:hover { border-color: #ff7a8a; color: #ff7a8a; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+
+/* ==========================================================
+   7. RAPPORT DE RÉPARATION
+   ========================================================== */
+.report {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.report h3 { margin: 0 0 8px; font-size: 1rem; }
+.report ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: .92rem; }
+.report li.ok::marker   { color: var(--ok); }
+.report li.warn::marker { color: var(--warn); }
+.report li.warn { color: var(--warn); }
+.report .empty-msg { color: var(--muted); font-size: .92rem; margin: 0; }
+
+/* ==========================================================
+   8. PIED DE PAGE (façon pro)
+   ========================================================== */
+footer {
+  border-top: 1px solid var(--line);
+  background: rgba(20,26,46,.7);
+}
+.foot-inner {
+  max-width: 1280px; margin: 0 auto;
+  padding: 18px 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  color: var(--muted); font-size: .88rem;
+}
+.signature { display: flex; align-items: center; gap: 10px; }
+
+/* Respect des préférences d’accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  .reveal { animation: none; opacity: 1; }
+  * { transition: none !important; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ================= EN-TÊTE ================= -->
+<header class="reveal" style="--d:.05s">
+  <!-- ► METS TON LOGO ICI : remplace [VOTRE_URL_DE_LOGO] par le lien ou le chemin de ton image -->
+  <span class="logo-slot">
+    <img src="[VOTRE_URL_DE_LOGO]" alt="Logo" onerror="this.parentElement.classList.add('empty')">
+  </span>
+  <div>
+    <h1>Atelier de réparation de code</h1>
+    <p>Colle ton script, choisis les corrections, récupère un code propre.</p>
+  </div>
+</header>
+
+<main>
+  <!-- ================= OPTIONS ================= -->
+  <section class="options reveal" style="--d:.15s" aria-label="Options de réparation">
+    <span class="title">Corrections</span>
+    <label class="chip"><input type="checkbox" id="optInvisible" checked><span>Caractères invisibles</span></label>
+    <label class="chip"><input type="checkbox" id="optQuotes" checked><span>Guillemets typographiques</span></label>
+    <label class="chip"><input type="checkbox" id="optTabs" checked><span>Tabulations en espaces</span></label>
+    <label class="chip"><input type="checkbox" id="optTrail" checked><span>Espaces en fin de ligne</span></label>
+    <label class="chip"><input type="checkbox" id="optBlank" checked><span>Lignes vides en trop</span></label>
+    <label class="chip"><input type="checkbox" id="optBrackets" checked><span>Vérifier les parenthèses et accolades</span></label>
+    <select id="indentSize" aria-label="Largeur d’une tabulation">
+      <option value="2">2 espaces</option>
+      <option value="4" selected>4 espaces</option>
+    </select>
+  </section>
+
+  <!-- ================= COMPARTIMENTS ENTRÉE / RÉSULTAT ================= -->
+  <div class="grid">
+    <section class="card reveal" style="--d:.25s">
+      <div class="card-head">
+        <div class="head-left"><div class="dots"><i></i><i></i><i></i></div><h2>Code à réparer</h2></div>
+      </div>
+      <textarea id="input" spellcheck="false" placeholder="Colle ton code ici…"></textarea>
+      <div class="card-foot"><span id="inStats">0 ligne · 0 caractère</span></div>
+    </section>
+
+    <section class="card reveal" style="--d:.35s">
+      <div class="card-head">
+        <div class="head-left"><div class="dots"><i></i><i></i><i></i></div><h2>Code réparé</h2></div>
+        <!-- Bouton Copier -->
+        <button class="btn small" id="copyBtn" type="button">Copier</button>
+      </div>
+      <textarea id="output" spellcheck="false" readonly placeholder="Le résultat apparaîtra ici."></textarea>
+      <div class="card-foot"><span id="outStats">0 ligne · 0 caractère</span></div>
+    </section>
+  </div>
+
+  <!-- ================= BOUTONS D’ACTION ================= -->
+  <div class="actions reveal" style="--d:.45s">
+    <button class="btn primary" id="repairBtn" type="button">Réparer le code</button>
+    <button class="btn danger" id="resetBtn" type="button">Tout effacer</button>
+  </div>
+
+  <!-- ================= RAPPORT ================= -->
+  <section class="report reveal" style="--d:.55s" aria-live="polite">
+    <h3>Rapport</h3>
+    <p class="empty-msg" id="reportEmpty">Lance une réparation pour voir ce qui a été corrigé. Raccourci : Ctrl + Entrée.</p>
+    <ul id="reportList" hidden></ul>
+  </section>
+</main>
+
+<!-- ================= PIED DE PAGE ================= -->
+<footer class="reveal" style="--d:.65s">
+  <div class="foot-inner">
+    <div class="signature">
+      <!-- ► Logo miniature : même emplacement à personnaliser -->
+      <span class="logo-slot mini">
+        <img src="[VOTRE_URL_DE_LOGO]" alt="Logo" onerror="this.parentElement.classList.add('empty')">
+      </span>
+      <span>Créé par [VOTRE_SIGNATURE]</span>
+    </div>
+    <span>© <span id="year"></span> Atelier de réparation de code</span>
+  </div>
+</footer>
+
+<script>
+/* ==========================================================
+   JAVASCRIPT : tout se passe dans le navigateur, rien n’est envoyé en ligne
+   ========================================================== */
+const $ = (id) => document.getElementById(id);
+const input = $("input"), output = $("output");
+const reportList = $("reportList"), reportEmpty = $("reportEmpty");
+
+$("year").textContent = new Date().getFullYear();
+
+/* ---------- Compteurs de lignes / caractères ---------- */
+function stats(text) {
+  const lines = text ? text.split("\n").length : 0;
+  const s = (n, w) => n + " " + w + (n > 1 ? "s" : "");
+  return s(lines, "ligne") + " · " + s(text.length, "caractère");
+}
+function updateStats() {
+  $("inStats").textContent = stats(input.value);
+  $("outStats").textContent = stats(output.value);
+}
+input.addEventListener("input", updateStats);
+
+/* ---------- Remplacement avec comptage ---------- */
+function replaceCount(text, regex, replacement) {
+  let n = 0;
+  const result = text.replace(regex, (...args) => {
+    n++;
+    return typeof replacement === "function" ? replacement(...args) : replacement;
+  });
+  return { text: result, count: n };
+}
+
+/* ---------- Vérification simple des parenthèses, crochets et accolades ----------
+   Ignore les chaînes de texte et les commentaires de code. */
+function checkBrackets(code) {
+  const pairs = { ")": "(", "]": "[", "}": "{" };
+  const stack = [];
+  let line = 1, i = 0;
+  while (i < code.length) {
+    const c = code[i], next = code[i + 1];
+    if (c === "\n") { line++; i++; continue; }
+    if (c === "/" && next === "/") { while (i < code.length && code[i] !== "\n") i++; continue; }
+    if (c === "/" && next === "*") {
+      i += 2;
+      while (i < code.length && !(code[i] === "*" && code[i + 1] === "/")) { if (code[i] === "\n") line++; i++; }
+      i += 2; continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      const quote = c; i++;
+      while (i < code.length && code[i] !== quote) {
+        if (code[i] === "\\") i++;
+        if (code[i] === "\n") { line++; if (quote !== "`") break; }
+        i++;
+      }
+      i++; continue;
+    }
+    if ("([{".includes(c)) stack.push({ c, line });
+    else if (")]}".includes(c)) {
+      const top = stack.pop();
+      if (!top || top.c !== pairs[c]) return "« " + c + " » inattendu à la ligne " + line + ".";
+    }
+    i++;
+  }
+  if (stack.length) {
+    const t = stack[stack.length - 1];
+    return "« " + t.c + " » ouvert à la ligne " + t.line + " n’est jamais fermé.";
+  }
+  return null;
+}
+
+/* ---------- Réparation ---------- */
+function repair() {
+  let code = input.value;
+  const report = [];
+  const add = (count, msg) => { if (count > 0) report.push({ type: "ok", msg: msg.replace("{n}", count) }); };
+
+  if (!code.trim()) {
+    showReport([{ type: "warn", msg: "Rien à réparer : colle d’abord du code dans le compartiment de gauche." }]);
+    input.focus();
+    return;
+  }
+
+  // Fins de ligne Windows/Mac → \n (toujours appliqué)
+  let r = replaceCount(code, /\r\n?/g, "\n");
+  code = r.text; add(r.count, "{n} fin(s) de ligne uniformisée(s)");
+
+  if ($("optInvisible").checked) {
+    r = replaceCount(code, /[\uFEFF\u200B\u200C\u200D\u2060]/g, "");
+    code = r.text; add(r.count, "{n} caractère(s) invisible(s) supprimé(s)");
+    r = replaceCount(code, /\u00A0/g, " ");
+    code = r.text; add(r.count, "{n} espace(s) insécable(s) remplacé(s)");
+  }
+  if ($("optQuotes").checked) {
+    r = replaceCount(code, /[\u2018\u2019\u201B]/g, "'");
+    code = r.text; add(r.count, "{n} apostrophe(s) typographique(s) corrigée(s)");
+    r = replaceCount(code, /[\u201C\u201D\u201E]/g, '"');
+    code = r.text; add(r.count, "{n} guillemet(s) typographique(s) corrigé(s)");
+  }
+  if ($("optTabs").checked) {
+    const spaces = " ".repeat(Number($("indentSize").value));
+    r = replaceCount(code, /\t/g, spaces);
+    code = r.text; add(r.count, "{n} tabulation(s) convertie(s) en espaces");
+  }
+  if ($("optTrail").checked) {
+    r = replaceCount(code, /[ \t]+$/gm, "");
+    code = r.text; add(r.count, "{n} ligne(s) nettoyée(s) de leurs espaces de fin");
+  }
+  if ($("optBlank").checked) {
+    r = replaceCount(code, /\n{3,}/g, "\n\n");
+    code = r.text; add(r.count, "{n} série(s) de lignes vides réduite(s)");
+  }
+  // Une seule ligne vide à la fin du fichier
+  code = code.replace(/\n*$/, "\n");
+
+  if ($("optBrackets").checked) {
+    const problem = checkBrackets(code);
+    report.push(problem
+      ? { type: "warn", msg: "Parenthèses ou accolades : " + problem + " À corriger à la main." }
+      : { type: "ok", msg: "Parenthèses, crochets et accolades équilibrés." });
+  }
+  if (!report.some(x => x.msg.includes("corrigé") || x.msg.includes("supprimé") || x.msg.includes("remplacé") ||
+      x.msg.includes("converti") || x.msg.includes("nettoyé") || x.msg.includes("réduite") || x.msg.includes("uniformisée"))) {
+    report.unshift({ type: "ok", msg: "Aucune correction de format nécessaire." });
+  }
+
+  output.value = code;
+  updateStats();
+  showReport(report);
+}
+
+/* ---------- Affichage du rapport ---------- */
+function showReport(items) {
+  reportList.innerHTML = "";
+  items.forEach(({ type, msg }) => {
+    const li = document.createElement("li");
+    li.className = type;
+    li.textContent = msg;   // textContent : pas d’injection HTML possible
+    reportList.appendChild(li);
+  });
+  reportEmpty.hidden = true;
+  reportList.hidden = false;
+}
+
+/* ---------- Bouton Copier (avec confirmation « Copié ! ») ---------- */
+const copyBtn = $("copyBtn");
+let copyTimer;
+async function copyResult() {
+  if (!output.value) return;
+  try {
+    await navigator.clipboard.writeText(output.value);
+  } catch (e) {
+    // Solution de secours pour les navigateurs sans API presse-papiers
+    output.removeAttribute("readonly");
+    output.select();
+    document.execCommand("copy");
+    output.setAttribute("readonly", "");
+    output.setSelectionRange(0, 0);
+  }
+  copyBtn.textContent = "Copié !";
+  copyBtn.classList.add("copied");
+  clearTimeout(copyTimer);
+  copyTimer = setTimeout(() => {
+    copyBtn.textContent = "Copier";
+    copyBtn.classList.remove("copied");
+  }, 1800);
+}
+
+/* ---------- Bouton Tout effacer ---------- */
+function resetAll() {
+  input.value = "";
+  output.value = "";
+  reportList.innerHTML = "";
+  reportList.hidden = true;
+  reportEmpty.hidden = false;
+  updateStats();
+  input.focus();
+}
+
+/* ---------- Branchement des boutons ---------- */
+$("repairBtn").addEventListener("click", repair);
+copyBtn.addEventListener("click", copyResult);
+$("resetBtn").addEventListener("click", resetAll);
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") repair();
+});
+</script>
+</body>
+</html>

@@ -1,20 +1,3 @@
--- Deobfuscated by deobf (dynamic trace)
--- source: in.lua
--- NOTE: reconstructed from observed behaviour; branches that were not taken
---       during the trace are missing and conditions are only noted in comments.
--- run status: finished
--- 4402 statements recorded in 10.70s
--- non-standard globals touched: isSliderOpen
-
--- [deobf] folded 0 repeated calls into 0 helper functions and 22 unrolled runs into loops
--- loadstring() of 82921 bytes: "local z=...;return({yN=function(x,x,j,A)if A>39.0 then local l=(93);repeat if l<93.0 then break;else if not(l>24.0)then else l=24;if A~=46.0 then j=x[44]();else j=x[47]();end;continue;end;end;until fa"
-task.spawn(function()
-end)
-task.spawn(function()
-end)
-task.delay(825, function()
- -- [envlog] cancelled before it ran
-end)
 local ScreenGui = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
 Frame.Position = UDim2.new(0, 0, 0, 0)
